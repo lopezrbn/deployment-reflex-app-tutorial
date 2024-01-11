@@ -1,9 +1,8 @@
-# deployment-reflex-app-tutorial
-Tutorial on how to deploy a Reflex app into a Ubuntu VPS
+# Tutorial on how to deploy a Reflex web app into a Ubuntu VPS
 
 
 ## Introduction
-This tutorial explains how to deploy a [Reflex](https://reflex.dev/) web app into a Virtual Private Server (VPS) configured with Linux to which you have access through SSH. In this case, the Ubuntu 23.10 distribution is used.
+This tutorial explains how to deploy a [Reflex](https://reflex.dev/) web app into a Virtual Private Server (VPS) configured with Linux to which you have access through SSH terminal. In this case, the Ubuntu 23.10 distribution is used.
 
 
 ## Table of Contents
@@ -11,13 +10,15 @@ This tutorial explains how to deploy a [Reflex](https://reflex.dev/) web app int
 2. Configuration of rxconfig.py file
 3. Installation and configuration of NGINX as a reverse proxy with Websockets
 4. SSL certificate for HTTPS
-5. Configuration of Reflex app as a system service
+5. Reflex run
+6. Configuration of Reflex app as a system service
 
 
 ## 1. Cloning of the GitHub repository and installation of virtual environment and requirements
 Firstly, choose a repository containing a Reflex web app and copy its link. For this tutorial, I will be using my own [car-price-checker](https://github.com/lopezrbn/car-price-checker) repository, a project that I developed the check the value of a car in the used car market. Just substitute any reference to this project name below with yours. 
 
 Click the green `<> Code` button and copy the link under the `HTTPS` option.
+
 ![image](https://github.com/lopezrbn/deployment-reflex-app-tutorial/assets/113603061/9fa113c0-075a-4ba0-870c-cb5c0b565c3c)
 
 Navigate to the directory in which you will be creating the project and:
@@ -26,6 +27,7 @@ Navigate to the directory in which you will be creating the project and:
    ```
 
 If everything is correct, you will see some messages like this:
+
 ![image](https://github.com/lopezrbn/deployment-reflex-app-tutorial/assets/113603061/d73923fe-d8de-4933-9739-dfa3105f3b10)
 
 Now navigate inside the project folder and create a virtual environment under the name `venv`:
@@ -88,9 +90,11 @@ sudo apt install nginx
 ```
 
 Then check if the server is active and running. If it is, you should see something as shown below.
+
 ![image](https://github.com/lopezrbn/deployment-reflex-app-tutorial/assets/113603061/d3bbeb6a-bf43-42d5-9676-3da44ce04ef1)
 
 And, if you navigate to your VPS IP, should see the NGINX welcome page.
+
 ![image](https://github.com/lopezrbn/deployment-reflex-app-tutorial/assets/113603061/8f41ae56-5899-407f-b137-785dbfb006dc)
 
 So once NGINX is installed, the next step is to configure how to redirect the client's petitions to the ports in which Reflex is running.
@@ -144,6 +148,7 @@ sudo systemctl restart nginx
 ```
 
 In the case there is some mistake in the configuration, you will see a message as shown below. Just open the file again and check everything is written as in the code snippet above.
+
 ![image](https://github.com/lopezrbn/deployment-reflex-app-tutorial/assets/113603061/6284afa4-cf55-4d65-82d9-2cff4503f32a)
 
 In case you do not find any error message, you can check the status of NGINX with:
@@ -151,12 +156,45 @@ In case you do not find any error message, you can check the status of NGINX wit
 systemctl status nginx.service
 ```
 If everything is working fine, you should see something as:
+
 ![image](https://github.com/lopezrbn/deployment-reflex-app-tutorial/assets/113603061/ade90a4a-572e-4cc8-969f-c7584a0be1e8)
 
 
 ## 4. SSL certificate for HTTPS
 
-Under construction.
+In case you are using a domain to access your web app, redirecting this to your VPS IP, you can choose to upgrade your app to use `https` instead of `http`.
+
+For this, we will be using [certbot](https://certbot.eff.org/) to automatically handle the process. Just navigate to the webpage and go to the bottom where you will find the statement `My HTTP website is running Software on System`. Use the selection buttons and choose `Nginx` and `Ubuntu 20` as in the image below:
+
+![image](https://github.com/lopezrbn/deployment-reflex-app-tutorial/assets/113603061/3ad69437-f6b9-461a-91ae-4fe13e0eff21)
+
+Now you just need to follow the steps shown on the web page, that I will reproduce here.
+
+1. SSH into the server: you already are logged in to the server if you have followed this tutorial up to here.
+2. Install snapd: you can skip this step as snapd is already installed on Ubuntu 18 or higher distributions.
+3. Remove certbot-auto just in case:
+   ```
+   sudo apt-get remove certbot
+   ```
+4. Install Certbot
+   ```
+   sudo snap install --classic certbot
+   ```
+5. Prepare the Certbot command
+   ```
+   sudo ln -s /snap/bin/certbot /usr/bin/certbot
+   ```
+6. Choose the mode _get and install your certificates_
+   ```
+   sudo certbot --nginx
+   ```
+7. Test automatic renewal
+   ```
+   sudo certbot renew --dry-run
+   ```
+
+If at this point, you have followed all the steps with no error, Certbot will have automatically updated your NGINX configuration file, adding the needed directives to use HTTPS on your site.
+
 
 
 ## 5. Reflex run
@@ -182,6 +220,7 @@ reflex run --env prod
 ```
 
 If everything was fine, you should see something like this:
+
 ![image](https://github.com/lopezrbn/deployment-reflex-app-tutorial/assets/113603061/df636648-a0c9-4df7-b3ab-1f964d865c11)
 
 And as the message says, your app is already running at `http://localhost:3002`.
@@ -191,4 +230,83 @@ Now you can go to your browser and navigate to `http://your_vps_ip_or_domain` to
 
 ## 6. Configuration of Reflex app as a system service
 
-Under construction.
+If you have come to this point, you already have your Reflex app running hosted in your VPS. However, what happens when you close your SSH terminal?
+
+Well, what happens is that once we close the terminal, the Reflex process is killed and your app stops working, which of course is not the desired behaviour. So we need a way of running Reflex as a background process to not be killed when we close our terminal.
+
+The usual form of doing this is running Reflex, or any other process, in the background adding `&` at the end of the command `reflex run --env prod &`. However, although this will effectively execute Reflex in the background, it will not work either due to Ubuntu sending a killing signal to the background processes when the SSH terminal is closed.
+
+So the best way to solve this problem is to add the Reflex process as a system service to be executed not only in the background but automatically every time the server restarts.
+
+Hence, we go first to the Ubuntu system folder:
+
+```
+cd /etc/systemd/system
+```
+
+Then we create a new configuration file, using `your_service_name.service` as the name for which we will control the service later. I use the formula `reflex-bg-name-of-the-app.service`, so then is always easy to remember how the service was called. In the `car-checker-prices` project, the service would name `reflex-bg-car-price-checker.service`:
+
+```
+sudo nano <your_service_name>.service
+```
+
+And copy the following code inside it:
+
+```
+[Unit]
+Description=<your_app_service_description>
+After=network.target
+
+[Service]
+User=<your_vps_user>
+Type=simple
+WorkingDirectory=<your_app_path>
+Environment="PATH=<your_app_path>:/usr/bin"
+ExecStartPre=<your_app_path>/venv/bin/python3 -m reflex init
+ExecStart=<your_app_path>/venv/bin/python3 -m reflex run --env prod
+#ExecStart=echo $PATH
+RemainAfterExit=yes
+TimeoutSec=0
+#Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Of course, now you should change the following fields:
+- `<your_app_service_description>`: this will be the description of the service you will see when you call `systemctl status your_service_name.service`. I use the formula `<your_app_name> web app background Reflex service`. So in this project, it would be `Car price checker web app background Reflex service.`. But of course, use whatever works for you.
+- `<your_vps_user>`: this is the user you log in with to enter the VPS. In my case, it is `ubuntu`, which is a common name for Ubuntu servers.
+- `<your_app_path>`: this is the path of the folder in which you have cloned the app. If you have doubts about the full path, navigate to it and use `pwd` to obtain the exact path. Be careful and check the script twice as you will need to write `<your_app_path>` for four times in the file.
+
+As always, `Ctrl` + `X` to close, and press `y` and `Enter` to save the changes.
+
+And once the file is written, we just need to mount and initialize it.
+
+Reset the daemons:
+```
+sudo systemctl daemon-reload
+```
+
+Enable the service:
+```
+sudo systemctl enable <your_service_name.service>
+```
+
+If it works, you should see a message saying that a symbolic link to the file has been created.
+
+Then we start the service:
+```
+sudo systemctl start <your_service_name.service>
+```
+
+Finally, we check the service is running with no errors:
+```
+systemctl status <your_service_name.service>
+```
+
+If the service works well, you will see something like the following:
+
+![image](https://github.com/lopezrbn/deployment-reflex-app-tutorial/assets/113603061/bc78410a-2866-4ec1-b987-87bb1abd17cc)
+
+
+And that is everything. Now you have a Reflex web app running in the background as a system service hosted in your VPS!
