@@ -8,14 +8,14 @@ This tutorial explains how to deploy a [Reflex](https://reflex.dev/) web app int
 ## Table of Contents
 1. Cloning of the GitHub repository and installation of the virtual environment
 2. Configuration of rxconfig.py file
-3. Installation and configuration of NGINX as a reverse proxy with Websockets
+3. Installation and configuration of NGINX as a reverse proxy with WebSocket
 4. SSL certificate for HTTPS
 5. Reflex run
 6. Configuration of Reflex app as a system service
 
 
 ## 1. Cloning of the GitHub repository and installation of virtual environment and requirements
-Firstly, choose a repository containing a Reflex web app and copy its link. For this tutorial, I will be using my own [car-price-checker](https://github.com/lopezrbn/car-price-checker) repository, a project that I developed the check the value of a car in the used car market. Just substitute any reference to this project name below with yours. 
+Firstly, choose a repository containing a Reflex web app and copy its link. For this tutorial, I will be using my own [car-price-checker](https://github.com/lopezrbn/car-price-checker) repository, a project that I developed to check the value of a car in the used car market. Just substitute any reference to this project name below with yours. 
 
 Click the green `<> Code` button and copy the link under the `HTTPS` option.
 
@@ -39,13 +39,8 @@ Now navigate inside the project folder and create a virtual environment under th
    ```
 
 And activate the virtual environment:
-> Linux/MAC:   
 ```
 source venv/bin/activate
-```
-> Windows:
-```
-.\venv\Scripts/activate
 ```
 
 Finally, installation of requirements and deactivation of the virtual environment:
@@ -63,7 +58,7 @@ The `rxconfig.py` file tells Reflex how to build your app. Here we will modify f
 
 - `front_port` defines the port in which the frontend will be running. I have configured it under port `3002` but Reflex uses by default port `3000`. Use any port you prefer under the range of 3000's.
 - `back_port` defines the port in which the backend will be running. I have configured it under port `8002` but Reflex uses by default port `8000`. Use any port you prefer under the range of 8000's.
-- Change `you_vps_domain_or_ip` for the domain in which you want to serve your app in case you have one, or in the other case, just write the IP of your VPS. Use always `http://` before the domain or the IP, or `https://` in case you are using a domain and want to configure it as secure (we will show how to do it in the following sections).
+- Change `you_vps_domain_or_ip` for the domain in which you want to serve your app in case you have one , or in the other case, just write the IP of your VPS. Use always `http://` before the domain or the IP, or `https://` in case you are using a domain and want to configure it as secure (we will show how to do it in the following sections).
 - `your_hostname` controls if your Reflex app is being run on your VPS (production mode) or in any other machine (usually in a testing environment). Change this parameter for your VPS hostname. To know your VPS hostname, just type:
 ```
 hostname
@@ -78,7 +73,7 @@ When you have finished, `Ctrl` + `X` to close, then press `y` and `Enter` to sav
 
 
 
-## 3. Installation and configuration of NGINX as a reverse proxy web server with Websockets
+## 3. Installation and configuration of NGINX as a reverse proxy web server with WebSocket
 
 The next step is to install and configure a web server to handle the client petitions to serve your Reflex app. We will be using NGINX as it is one of the most adopted by the community.
 
@@ -90,6 +85,10 @@ sudo apt install nginx
 ```
 
 Then check if the server is active and running. If it is, you should see something as shown below.
+
+```
+systemctl status nginx.service
+```
 
 ![image](https://github.com/lopezrbn/deployment-reflex-app-tutorial/assets/113603061/d3bbeb6a-bf43-42d5-9676-3da44ce04ef1)
 
@@ -162,7 +161,7 @@ If everything is working fine, you should see something as:
 
 ## 4. SSL certificate for HTTPS
 
-In case you are using a domain to access your web app, redirecting this to your VPS IP, you can choose to upgrade your app to use `https` instead of `http`.
+In case you are using a domain to access your web app (which needs to be redirected to your VPS IP), you can choose to upgrade your app to use `https` instead of `http`.
 
 For this, we will be using [certbot](https://certbot.eff.org/) to automatically handle the process. Just navigate to the webpage and go to the bottom where you will find the statement `My HTTP website is running Software on System`. Use the selection buttons and choose `Nginx` and `Ubuntu 20` as in the image below:
 
@@ -170,7 +169,7 @@ For this, we will be using [certbot](https://certbot.eff.org/) to automatically 
 
 Now you just need to follow the steps shown on the web page, that I will reproduce here.
 
-1. SSH into the server: you already are logged in to the server if you have followed this tutorial up to here.
+1. SSH into the server: you already are logged in to the server if you have followed this tutorial up to here, so omit this step.
 2. Install snapd: you can skip this step as snapd is already installed on Ubuntu 18 or higher distributions.
 3. Remove certbot-auto just in case:
    ```
@@ -199,19 +198,14 @@ If at this point, you have followed all the steps with no error, Certbot will ha
 
 ## 5. Reflex run
 
-At this point, NGINX is already configured to serve your Reflex app so you only need to run Reflex for the app to be available in your VPS.
+Now NGINX is already configured to serve your Reflex app so you only need to run Reflex for the app to be available in your VPS.
 
 For this, first navigate to the route of your Reflex app and activate again the virtual environment:
 ```
 cd /your/Reflex/app/path
 ```
-> Linux/MAC:   
 ```
 source venv/bin/activate
-```
-> Windows:
-```
-.\venv\Scripts/activate
 ```
 
 We will tell Reflex to run the app in production mode so it creates an optimized build of it which is much faster to be served:
@@ -223,7 +217,7 @@ If everything was fine, you should see something like this:
 
 ![image](https://github.com/lopezrbn/deployment-reflex-app-tutorial/assets/113603061/df636648-a0c9-4df7-b3ab-1f964d865c11)
 
-And as the message says, your app is already running at `http://localhost:3002`.
+And as the message says, your app is already running at `http://localhost:3002` (remember we have configured NGINX to redirect any petition from your browser when you enter your VPS IP or domain to this port).
 
 Now you can go to your browser and navigate to `http://your_vps_ip_or_domain` to check the app is working properly.
 
@@ -244,7 +238,7 @@ Hence, we go first to the Ubuntu system folder:
 cd /etc/systemd/system
 ```
 
-Then we create a new configuration file, using `your_service_name.service` as the name for which we will control the service later. I use the formula `reflex-bg-name-of-the-app.service`, so then is always easy to remember how the service was called. In the `car-checker-prices` project, the service would name `reflex-bg-car-price-checker.service`:
+Then we create a new configuration file, using `<your_service_name>.service` as the name for which we will control the service later. I use the formula `reflex-bg-<name-of-the-app>.service`, so then is always easy to remember how the service was called. In the `car-checker-prices` project, the service would name `reflex-bg-car-price-checker.service`:
 
 ```
 sudo nano <your_service_name>.service
@@ -274,9 +268,9 @@ WantedBy=multi-user.target
 ```
 
 Of course, now you should change the following fields:
-- `<your_app_service_description>`: this will be the description of the service you will see when you call `systemctl status your_service_name.service`. I use the formula `<your_app_name> web app background Reflex service`. So in this project, it would be `Car price checker web app background Reflex service.`. But of course, use whatever works for you.
+- `<your_app_service_description>`: this will be the description of the service you will see when you call `systemctl status <your_service_name>.service`. I use the formula `<your_app_name> web app background Reflex service`. So in this project, it would be `Car price checker web app background Reflex service.`. But of course, use whatever works for you.
 - `<your_vps_user>`: this is the user you log in with to enter the VPS. In my case, it is `ubuntu`, which is a common name for Ubuntu servers.
-- `<your_app_path>`: this is the path of the folder in which you have cloned the app. If you have doubts about the full path, navigate to it and use `pwd` to obtain the exact path. Be careful and check the script twice as you will need to write `<your_app_path>` for four times in the file.
+- `<your_app_path>`: this is the path of the folder in which you have cloned the app from the GitHub repository. If you have doubts about the full path, navigate to it and use `pwd` to obtain the exact path. Be careful and check the script twice as you will need to write `<your_app_path>` for four times in the file.
 
 As always, `Ctrl` + `X` to close, and press `y` and `Enter` to save the changes.
 
@@ -289,19 +283,19 @@ sudo systemctl daemon-reload
 
 Enable the service:
 ```
-sudo systemctl enable <your_service_name.service>
+sudo systemctl enable <your_service_name>.service
 ```
 
 If it works, you should see a message saying that a symbolic link to the file has been created.
 
 Then we start the service:
 ```
-sudo systemctl start <your_service_name.service>
+sudo systemctl start <your_service_name>.service
 ```
 
 Finally, we check the service is running with no errors:
 ```
-systemctl status <your_service_name.service>
+systemctl status <your_service_name>.service
 ```
 
 If the service works well, you will see something like the following:
