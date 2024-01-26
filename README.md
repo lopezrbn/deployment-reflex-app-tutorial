@@ -1,8 +1,14 @@
 # Tutorial on how to deploy a Reflex web app into a Ubuntu VPS
 
+<br>
+
+
 
 ## Introduction
 This tutorial explains how to deploy a [Reflex](https://reflex.dev/) web app into a Virtual Private Server (VPS) configured with Linux to which you have access through SSH terminal. In this case, the Ubuntu 23.10 distribution is used.
+
+<br>
+
 
 
 ## Table of Contents
@@ -12,6 +18,9 @@ This tutorial explains how to deploy a [Reflex](https://reflex.dev/) web app int
 4. SSL certificate for HTTPS
 5. Reflex run
 6. Configuration of Reflex app as a system service
+
+<br>
+
 
 
 ## 1. Cloning of the GitHub repository and installation of virtual environment and requirements
@@ -51,6 +60,8 @@ pip install -r requirements.txt
 deactivate
 ```
 
+<br>
+
 
 
 ## 2. Configuration of rxconfig.py file
@@ -70,6 +81,8 @@ sudo nano rxconfig.py
 ```
 
 When you have finished, `Ctrl` + `X` to close, then press `y` and `Enter` to save the changes.
+
+<br>
 
 
 
@@ -158,6 +171,9 @@ If everything is working fine, you should see something as:
 
 ![image](https://github.com/lopezrbn/deployment-reflex-app-tutorial/assets/113603061/ade90a4a-572e-4cc8-969f-c7584a0be1e8)
 
+<br>
+
+
 
 ## 4. SSL certificate for HTTPS
 
@@ -194,6 +210,8 @@ Now you just need to follow the steps shown on the web page, that I will reprodu
 
 If at this point, you have followed all the steps with no error, Certbot will have automatically updated your NGINX configuration file, adding the needed directives to use HTTPS on your site.
 
+<br>
+
 
 
 ## 5. Reflex run
@@ -220,6 +238,9 @@ If everything was fine, you should see something like this:
 And as the message says, your app is already running at `http://localhost:3002` (remember we have configured NGINX to redirect any petition from your browser when you enter your VPS IP or domain to this port).
 
 Now you can go to your browser and navigate to `http://your_vps_ip_or_domain` to check the app is working properly.
+
+<br>
+
 
 
 ## 6. Configuration of Reflex app as a system service
